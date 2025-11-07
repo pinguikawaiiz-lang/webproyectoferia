@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centavos a Sueños: Calculadora de Ahorro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for statistical charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <!-- Configuración para usar la fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Fondo gris suave */
+            transition: background-color 0.5s;
+        }
+        /* Estilos personalizados para un mejor look and feel */
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .input-focus-ring:focus {
+            --tw-ring-color: #8b5cf6; /* Ring púrpura (Violet-500) */
+            border-color: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex justify-center items-start">
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <div class="w-full max-w-4xl bg-white p-6 sm:p-10 rounded-3xl card-shadow border-4 border-violet-200">
+        
+        <!-- Encabezado y Título Rediseñado -->
+        <header class="text-center mb-10 border-b pb-4 border-violet-100">
+            <div class="text-7xl mb-3 animate-pulse" role="img" aria-label="Icono de alcancía chanchito">
+                💰🐷🚀
+            </div>
+            <h1 class="text-5xl font-extrabold text-violet-700 mb-1 leading-tight">
+                Centavos a Sueños
+            </h1>
+            <p class="text-gray-500 text-lg font-medium">
+                Calcula el poder de tu constancia con $A = x \cdot n$
+            </p>
+        </header>
+
+        <!-- Sección de Entrada de Datos -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-violet-50 rounded-2xl border-2 border-violet-200">
+            <!-- Input: Cantidad por período (x) -->
+            <div class="space-y-1">
+                <label for="cantidad" id="cantidadLabel" class="block text-sm font-semibold text-violet-700">
+                    Cantidad a ahorrar por período (x)
+                </label>
+                <div class="relative rounded-lg shadow-md">
+                    <input type="number" id="cantidad" placeholder="5" value="5" min="1"
+                           class="w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 input-focus-ring transition duration-150 ease-in-out font-medium text-lg">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span class="text-gray-400 font-bold">Bs</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1" id="cantidadHelpText">Monto fijo que depositas (ej. 5 Bs)</p>
+            </div>
+
+            <!-- Input: Número de períodos (n) -->
+            <div class="space-y-1">
+                <label for="periodos" class="block text-sm font-semibold text-violet-700">
+                    Número de períodos a proyectar (n)
+                </label>
+                <input type="number" id="periodos" placeholder="30" value="30" min="1"
+                       class="w-full pl-3 pr-3 py-3 border border-gray-300 rounded-lg shadow-md focus:ring-2 focus:ring-violet-500 input-focus-ring transition duration-150 ease-in-out font-medium text-lg">
+                <p class="text-xs text-gray-500 mt-1">Total de días, semanas o meses.</p>
+            </div>
+
+            <!-- Input: Tipo de Período -->
+            <div class="space-y-1">
+                <label for="tipo_periodo" class="block text-sm font-semibold text-violet-700">
+                    Unidad de Tiempo
+                </label>
+                <select id="tipo_periodo" class="w-full pl-3 pr-3 py-3 border border-gray-300 rounded-lg shadow-md bg-white focus:ring-2 focus:ring-violet-500 input-focus-ring transition duration-150 ease-in-out font-medium text-lg">
+                    <option value="Días">Días</option>
+                    <option value="Semanas">Semanas</option>
+                    <option value="Meses">Meses</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Define si es diario, semanal o mensual.</p>
+            </div>
+        </section>
+
+        <!-- Botón de Cálculo y Resultado (Caja de Resumen) -->
+        <div class="flex flex-col sm:flex-row justify-between items-center bg-emerald-500 p-5 rounded-2xl shadow-xl transform hover:scale-[1.01] transition duration-300 ease-in-out mb-8">
+            <button id="calcularBtn"
+                    class="w-full sm:w-auto px-8 py-3 bg-white text-emerald-600 font-extrabold rounded-full shadow-lg hover:bg-gray-100 transition duration-300 ease-in-out transform hover:scale-105 active:scale-95 text-xl tracking-wide border-2 border-emerald-600">
+                Calcular Proyección
+            </button>
+
+            <!-- Total Ahorrado (A = x * n) -->
+            <div class="mt-4 sm:mt-0 text-center sm:text-right text-white">
+                <p class="text-base font-semibold opacity-90">Ahorro Total Proyectado (A):</p>
+                <p id="totalAhorrado" class="text-5xl font-black">0.00 Bs</p>
+            </div>
+        </div>
+
+        <!-- Sección de Gráfico Estadístico -->
+        <section class="bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-inner">
+            <h2 id="chartTitle" class="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-3">
+                Gráfico de Crecimiento Lineal del Ahorro
+            </h2>
+            <div class="relative h-96">
+                <canvas id="ahorroChart"></canvas>
+            </div>
+            <p class="text-center text-sm text-gray-400 mt-4">
+                El gráfico demuestra cómo el ahorro crece proporcionalmente (ecuación lineal).
+            </p>
+        </section>
+
+        <!-- Mensaje para el usuario -->
+        <div id="messageBox" class="fixed top-0 left-0 right-0 bg-red-500 text-white text-center py-3 transition-transform duration-300 ease-in-out transform -translate-y-full font-semibold z-50" role="alert">
+            <!-- Mensaje de error/información se insertará aquí -->
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Importaciones de Firebase (OBLIGATORIAS para el entorno de Canvas)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variables globales del entorno de Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, chartInstance = null;
+
+        // Función para mostrar mensajes de error/información en el UI
+        function showMessage(message, type = 'error') {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            
+            // Colores basados en el tipo de mensaje
+            let bgColor = type === 'error' ? 'bg-red-500' : 'bg-emerald-500';
+
+            // Actualizar clases de la caja de mensaje
+            box.className = `fixed top-0 left-0 right-0 text-white text-center py-3 transition-transform duration-300 ease-in-out transform font-semibold z-50 ${bgColor}`;
+            box.style.transform = 'translateY(0)';
+
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                box.style.transform = 'translateY(-100%)';
+            }, 3000);
+        }
+
+        // 1. Inicialización de Firebase (Esencial para el entorno)
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase config no está disponible.");
+                return;
+            }
+
+            try {
+                setLogLevel('debug');
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Usuario autenticado con token personalizado.");
+                } else {
+                    await signInAnonymously(auth);
+                    console.log("Usuario autenticado anónimamente.");
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        console.log(`Usuario ID: ${user.uid}`);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error al inicializar Firebase o autenticar:", error);
+                showMessage("Error de inicialización. Revisa la consola.");
+            }
+        }
+        
+        // 2. Función para actualizar las etiquetas de la interfaz (UI)
+        function updateUILabels(tipoPeriodo) {
+            const labelEl = document.getElementById('cantidadLabel');
+            const helpTextEl = document.getElementById('cantidadHelpText');
+            
+            // Convertir 'Días', 'Semanas', 'Meses' a singular ('Día', 'Semana', 'Mes') para las etiquetas.
+            // Esto maneja plurales y singulares de forma simple.
+            const tipoSingular = tipoPeriodo.toLowerCase().replace(/s$/, '');
+
+            if (labelEl) {
+                labelEl.textContent = `Cantidad a ahorrar por ${tipoSingular} (x)`;
+            }
+
+            if (helpTextEl) {
+                helpTextEl.textContent = `Monto fijo que depositas cada ${tipoSingular} (ej. 5 Bs)`;
+            }
+        }
+
+        // 3. Función Principal de Cálculo y Gráfico
+        function calcularAhorro() {
+            const cantidadInput = document.getElementById('cantidad');
+            const periodosInput = document.getElementById('periodos');
+            const tipoPeriodo = document.getElementById('tipo_periodo').value;
+            const totalAhorradoEl = document.getElementById('totalAhorrado');
+            const chartTitleEl = document.getElementById('chartTitle');
+
+            // 1. Obtener y validar los valores (x y n)
+            const x = parseFloat(cantidadInput.value); // Cantidad a ahorrar por período (x)
+            const n_max = parseInt(periodosInput.value, 10); // Número de períodos (n)
+
+            if (isNaN(x) || x <= 0 || isNaN(n_max) || n_max <= 0) {
+                showMessage("¡Error! Por favor, ingresa valores positivos válidos (x y n).", 'error');
+                totalAhorradoEl.textContent = '0.00 Bs';
+                // Usar valores cero para limpiar la gráfica si hay error
+                updateChart([], [], tipoPeriodo, 'Proyección de Crecimiento Lineal del Ahorro');
+                return;
+            }
+
+            // 2. Aplicar la Ecuación Lineal: A = x * n_max
+            const A = x * n_max;
+
+            // 3. Mostrar el Resultado Total
+            totalAhorradoEl.textContent = `${A.toFixed(2)} Bs`;
+            showMessage(`¡Meta! Ahorrarás ${A.toFixed(2)} Bs en ${n_max} ${tipoPeriodo.toLowerCase()}.`, 'success');
+
+            // 4. Generar Datos para el Gráfico
+            const labels = [];
+            const data = [];
+            for (let n = 1; n <= n_max; n++) {
+                const ahorro_n = x * n;
+                labels.push(n); 
+                data.push(ahorro_n);
+            }
+
+            // 5. Actualizar Título y Gráfico
+            const newTitle = `Crecimiento del Ahorro en ${n_max} ${tipoPeriodo}`;
+            updateChart(labels, data, tipoPeriodo, newTitle);
+        }
+
+        // 4. Función de Gráfico (Chart.js)
+        function updateChart(labels, data, tipoPeriodo, newTitle) {
+            const ctx = document.getElementById('ahorroChart').getContext('2d');
+            document.getElementById('chartTitle').textContent = newTitle;
+
+
+            if (chartInstance) {
+                chartInstance.destroy(); // Destruir instancia anterior si existe
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line', 
+                data: {
+                    labels: labels, 
+                    datasets: [{
+                        label: 'Ahorro Acumulado (Bs)',
+                        data: data, 
+                        borderColor: '#10b981', // Color verde menta (Emerald-500)
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        borderWidth: 4,
+                        tension: 0.35, // Curva más moderna
+                        pointRadius: 4,
+                        pointBackgroundColor: '#8b5cf6', // Puntos violetas
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#4b5563',
+                                font: { size: 14, family: 'Inter' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(55, 65, 81, 0.9)',
+                            titleFont: { size: 14, family: 'Inter' },
+                            bodyFont: { size: 14, family: 'Inter' },
+                            callbacks: {
+                                title: function(context) {
+                                    return `Período ${context[0].label}`;
+                                },
+                                label: function(context) {
+                                    return ` Total: ${context.formattedValue} Bs`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: `Número de ${tipoPeriodo} (n)`,
+                                color: '#4b5563',
+                                font: { weight: 'bold', size: 14 }
+                            },
+                            grid: { display: false }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Ahorro Total (Bs)',
+                                color: '#4b5563',
+                                font: { weight: 'bold', size: 14 }
+                            },
+                            beginAtZero: true,
+                            grid: { color: '#e5e7eb' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 5. Inicialización de Eventos al cargar la ventana
+        window.onload = function() {
+            // Inicializar Firebase (obligatorio)
+            initializeFirebase();
+
+            // Obtener el selector de tipo de período
+            const tipoPeriodoSelect = document.getElementById('tipo_periodo');
+            
+            // Inicializar las etiquetas y el cálculo con valores por defecto
+            updateUILabels(tipoPeriodoSelect.value); 
+            calcularAhorro();
+
+            // Asignar el listener al botón de cálculo
+            const calcularBtn = document.getElementById('calcularBtn');
+            calcularBtn.addEventListener('click', calcularAhorro);
+
+            // Agregar listeners para recalcular automáticamente al cambiar inputs
+            document.getElementById('cantidad').addEventListener('input', calcularAhorro);
+            document.getElementById('periodos').addEventListener('input', calcularAhorro);
+            
+            // Listener para el cambio de período: recalcula Y actualiza etiquetas
+            tipoPeriodoSelect.addEventListener('change', () => { 
+                updateUILabels(tipoPeriodoSelect.value);
+                calcularAhorro();
+            });
+        };
+    </script>
+</body>
+</html>
